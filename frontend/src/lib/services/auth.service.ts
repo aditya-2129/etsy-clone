@@ -19,18 +19,23 @@ export async function register(
   name: string
 ): Promise<User> {
   try {
-    // Create the Appwrite account
+    // 1. Create the Appwrite auth account
+    console.log("[Register] Step 1: Creating auth account...");
     const newAccount: Models.User<Models.Preferences> = await account.create(
       ID.unique(),
       email,
       password,
       name
     );
+    console.log("[Register] Step 1 ✅ Account created:", newAccount.$id);
 
-    // Create a session so the user is logged in immediately
+    // 2. Create a session so the user is logged in immediately
+    console.log("[Register] Step 2: Creating session...");
     await account.createEmailPasswordSession(email, password);
+    console.log("[Register] Step 2 ✅ Session created");
 
-    // Create the user document in our database
+    // 3. Create the user document IMMEDIATELY after session
+    console.log("[Register] Step 3: Creating user document...");
     const userInput: CreateUserInput = {
       userId: newAccount.$id,
       name,
@@ -39,15 +44,16 @@ export async function register(
     };
 
     const userDoc = await createUserDocument(userInput);
+    console.log("[Register] Step 3 ✅ User document created:", userDoc.$id);
 
-    // Send verification email (non-blocking — don't fail registration if this fails)
+    // 4. Send verification email (non-blocking — don't fail registration if this fails)
     sendVerificationEmail().catch(() => {
       // Silently fail — user can resend from their profile
     });
 
     return userDoc;
   } catch (error) {
-    console.error("Registration failed:", error);
+    console.error("[Register] ❌ Registration failed at some step:", error);
     throw error;
   }
 }
@@ -109,17 +115,22 @@ export async function getCurrentUser(): Promise<User | null> {
       const user = await getUserByUserId(acc.$id);
       return user;
     } catch {
-      // User document doesn't exist yet (first OAuth login)
+      // User document doesn't exist yet (first OAuth login or failed registration)
       // Auto-create it from the Appwrite account info
-      const userInput: CreateUserInput = {
-        userId: acc.$id,
-        name: acc.name || acc.email.split("@")[0],
-        email: acc.email,
-        role: UserRole.BUYER,
-      };
+      try {
+        const userInput: CreateUserInput = {
+          userId: acc.$id,
+          name: acc.name || acc.email.split("@")[0],
+          email: acc.email,
+          role: UserRole.BUYER,
+        };
 
-      const newUser = await createUserDocument(userInput);
-      return newUser;
+        const newUser = await createUserDocument(userInput);
+        return newUser;
+      } catch (createError) {
+        console.error("Failed to auto-create user document:", createError);
+        return null;
+      }
     }
   } catch {
     return null;

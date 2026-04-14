@@ -61,7 +61,10 @@ export async function getUserByUserId(userId: string): Promise<User> {
 
     return result.documents[0] as unknown as User;
   } catch (error) {
-    console.error("Failed to get user:", error);
+    // Only log unexpected errors, not "not found" which is expected during registration/OAuth
+    if (error instanceof Error && !error.message.includes("not found")) {
+      console.error("Failed to get user:", error);
+    }
     throw error;
   }
 }

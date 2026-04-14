@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -51,12 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
+  const isAuthActionInProgress = useRef(false);
   const router = useRouter();
 
   /** Fetch the current user on mount */
   const refreshUser = useCallback(async () => {
+    // Skip if a register/login action is actively running to avoid race conditions
+    if (isAuthActionInProgress.current) return;
+
     try {
       const currentUser = await getCurrentUser();
+
+      // Double-check the guard again — the action may have started while we were awaiting
+      if (isAuthActionInProgress.current) return;
+
       setUser(currentUser);
 
       if (currentUser) {
@@ -89,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** Register a new account */
   const register = async (email: string, password: string, name: string) => {
+    isAuthActionInProgress.current = true;
     try {
       const newUser = await registerService(email, password, name);
       setUser(newUser);
@@ -105,11 +115,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.error("Unable to create account. Please try again.");
       }
       throw error;
+    } finally {
+      isAuthActionInProgress.current = false;
     }
   };
 
   /** Login with email/password */
   const login = async (email: string, password: string) => {
+    isAuthActionInProgress.current = true;
     try {
       await loginService(email, password);
       
@@ -145,6 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.error("Unable to sign in. Please try again.");
       }
       throw error;
+    } finally {
+      isAuthActionInProgress.current = false;
     }
   };
 

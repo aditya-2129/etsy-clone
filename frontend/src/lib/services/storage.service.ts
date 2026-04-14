@@ -1,5 +1,5 @@
 import { storage, ID } from "@/lib/appwrite";
-import type { Models } from "appwrite";
+import { Permission, Role, type Models } from "appwrite";
 
 // =============================================================================
 // Storage Service — File upload/delete/preview for all buckets
@@ -11,10 +11,19 @@ import type { Models } from "appwrite";
  */
 export async function uploadFile(
   bucketId: string,
-  file: File
+  file: File,
+  userId?: string
 ): Promise<Models.File> {
   try {
-    const result = await storage.createFile(bucketId, ID.unique(), file);
+    const permissions = userId ? [
+      Permission.read(Role.any()),
+      Permission.update(Role.user(userId)),
+      Permission.delete(Role.user(userId)),
+    ] : [
+      Permission.read(Role.any()),
+    ];
+
+    const result = await storage.createFile(bucketId, ID.unique(), file, permissions);
     return result;
   } catch (error) {
     console.error("Failed to upload file:", error);
@@ -95,10 +104,11 @@ export async function getFileMetadata(
  */
 export async function uploadMultipleFiles(
   bucketId: string,
-  files: File[]
+  files: File[],
+  userId?: string
 ): Promise<string[]> {
   try {
-    const uploadPromises = files.map((file) => uploadFile(bucketId, file));
+    const uploadPromises = files.map((file) => uploadFile(bucketId, file, userId));
     const results = await Promise.all(uploadPromises);
     return results.map((file) => file.$id);
   } catch (error) {

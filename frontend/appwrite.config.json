@@ -49,6 +49,7 @@
         {
             "$id": "users",
             "$permissions": [
+                "create(\"any\")",
                 "read(\"any\")",
                 "create(\"users\")",
                 "update(\"users\")",
@@ -260,13 +261,6 @@
                     "default": null
                 },
                 {
-                    "key": "isApproved",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
-                },
-                {
                     "key": "totalSales",
                     "type": "integer",
                     "required": true,
@@ -300,6 +294,13 @@
                     "size": 128,
                     "default": null,
                     "encrypt": false
+                },
+                {
+                    "key": "isApproved",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
                 }
             ],
             "indexes": [
@@ -528,13 +529,6 @@
                     "default": false
                 },
                 {
-                    "key": "isFeatured",
-                    "type": "boolean",
-                    "required": false,
-                    "array": false,
-                    "default": false
-                },
-                {
                     "key": "totalSold",
                     "type": "integer",
                     "required": false,
@@ -587,6 +581,13 @@
                     "default": 0,
                     "min": -9223372036854775808,
                     "max": 9223372036854775807
+                },
+                {
+                    "key": "isFeatured",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
                 }
             ],
             "indexes": [
@@ -1199,12 +1200,13 @@
             "fileSecurity": true,
             "name": "Product Images",
             "enabled": true,
-            "maximumFileSize": 5242880,
+            "maximumFileSize": 30000000,
             "allowedFileExtensions": [
                 "jpg",
                 "jpeg",
                 "png",
-                "webp"
+                "webp",
+                "gif"
             ],
             "compression": "none",
             "encryption": true,
@@ -1220,12 +1222,13 @@
             "fileSecurity": true,
             "name": "Shop Assets",
             "enabled": true,
-            "maximumFileSize": 5242880,
+            "maximumFileSize": 30000000,
             "allowedFileExtensions": [
                 "jpg",
                 "jpeg",
                 "png",
-                "webp"
+                "webp",
+                "gif"
             ],
             "compression": "none",
             "encryption": true,
@@ -1241,12 +1244,13 @@
             "fileSecurity": true,
             "name": "User Avatars",
             "enabled": true,
-            "maximumFileSize": 2097152,
+            "maximumFileSize": 10000000,
             "allowedFileExtensions": [
                 "jpg",
                 "jpeg",
                 "png",
-                "webp"
+                "webp",
+                "gif"
             ],
             "compression": "none",
             "encryption": true,

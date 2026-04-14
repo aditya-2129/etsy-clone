@@ -143,7 +143,8 @@ export default function CreateProductPage() {
         toast.loading("Uploading images...", { id: "upload-toast" });
         uploadedImageIds = await uploadMultipleFiles(
           BUCKET_PRODUCT_IMAGES,
-          imageFiles.map(f => f.file)
+          imageFiles.map(f => f.file),
+          user.userId
         );
         toast.dismiss("upload-toast");
       }

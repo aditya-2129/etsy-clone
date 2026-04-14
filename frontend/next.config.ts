@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
         // Appwrite storage — local development
         protocol: "http",
         hostname: "localhost",
+        port: "", // Allow all ports
         pathname: "/v1/storage/**",
       },
       {
@@ -16,6 +17,7 @@ const nextConfig: NextConfig = {
         pathname: "/v1/storage/**",
       },
     ],
+    unoptimized: process.env.NODE_ENV === "development",
   },
 };
 

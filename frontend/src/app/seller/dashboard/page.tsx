@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getShopsBySellerId, createShop } from "@/lib/services/shop.service";
-import { upgradeToSeller } from "@/lib/services/user.service";
+import { upgradeToSeller, linkShopToUser } from "@/lib/services/user.service";
+import { listAllProducts } from "@/lib/services/product.service";
 import type { Shop } from "@/lib/types";
 import { Loader2, Store, Package, ShoppingBag, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label";
 export default function SellerDashboardPage() {
   const { user, refreshUser } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
+  const [productCount, setProductCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -26,20 +28,24 @@ export default function SellerDashboardPage() {
   const [shopSlug, setShopSlug] = useState("");
 
   useEffect(() => {
-    async function checkShop() {
+    async function fetchDashboardData() {
       if (!user?.userId) return;
       try {
         const shops = await getShopsBySellerId(user.userId);
         if (shops.length > 0) {
           setShop(shops[0]);
+          
+          // Also fetch product count
+          const products = await listAllProducts({ sellerId: user.userId });
+          setProductCount(products.total);
         }
       } catch (error) {
-        console.error("Failed to fetch shop:", error);
+        console.error("Failed to fetch dashboard data:", error);
       } finally {
         setIsLoading(false);
       }
     }
-    checkShop();
+    fetchDashboardData();
   }, [user]);
 
   const handleCreateShop = async (e: React.FormEvent) => {
@@ -74,8 +80,14 @@ export default function SellerDashboardPage() {
 
       // 2. Upgrade user role if they are still a buyer
       if (user.role === "buyer") {
-        await upgradeToSeller(user.$id); // Still use $id for database document update
+        await upgradeToSeller(user.$id);
       }
+
+      // 3. Link the shop to the user document so user.shopId is set
+      await linkShopToUser(user.$id, newShop.$id);
+
+      // 4. Refresh AuthContext so the updated shopId is available app-wide
+      await refreshUser();
 
       setShop(newShop);
       toast.success("Shop created! Welcome to the marketplace.");
@@ -204,7 +216,7 @@ export default function SellerDashboardPage() {
             <Store className="h-4 w-4" />
             <span className="text-sm font-medium">Products</span>
           </div>
-          <p className="text-2xl font-bold">0</p>
+          <p className="text-2xl font-bold">{productCount}</p>
         </div>
         <div className="bg-card border rounded-xl p-6">
           <div className="flex items-center gap-2 text-[var(--muted-foreground)] mb-2">
@@ -218,15 +230,28 @@ export default function SellerDashboardPage() {
       {/* Placeholder Charts/Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card border rounded-xl p-6 min-h-[300px] flex flex-col items-center justify-center text-center">
-          <p className="text-muted-foreground italic">No sales data yet. Start by adding products!</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <a href="/seller/products/new">Add First Product</a>
-          </Button>
+          {productCount > 0 ? (
+            <>
+              <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+              <p className="text-muted-foreground italic">You have {productCount} active listing{productCount === 1 ? '' : 's'}.<br />Start selling to see revenue charts here!</p>
+              <Button variant="outline" className="mt-4" asChild>
+                <a href="/seller/products">View My Products</a>
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground italic">No listings yet. Start by adding your first product!</p>
+              <Button variant="outline" className="mt-4" asChild>
+                <a href="/seller/products/new">Add First Product</a>
+              </Button>
+            </>
+          )}
         </div>
         <div className="bg-card border rounded-xl p-6 min-h-[300px]">
           <h3 className="font-semibold mb-4">Recent Notifications</h3>
           <div className="space-y-4">
-            <div className="text-sm py-2 border-b">Welcome to the Marketplace! 🎉</div>
+            <div className="text-sm py-2 border-b font-medium text-[var(--etsy-orange)]">Shop Live! 🎉</div>
+            <div className="text-sm py-2 border-b">Welcome to the Marketplace! Your shop is ready for business.</div>
           </div>
         </div>
       </div>
