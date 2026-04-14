@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { Inter, Outfit, Geist } from "next/font/google";
 import { Toaster } from "sonner";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({
   variable: "--font-primary",
@@ -28,15 +30,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${outfit.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", inter.variable, outfit.variable, "font-sans", geist.variable)}
     >
       <body className="flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
-        <Navbar />
-        <main className="flex-1 w-full max-w-[var(--max-width)] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <AuthProvider>
           {children}
-        </main>
-        <Footer />
-        <Toaster position="bottom-right" richColors />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            style={{ top: '80px', right: '0px' }} 
+          />
+        </AuthProvider>
       </body>
     </html>
   );

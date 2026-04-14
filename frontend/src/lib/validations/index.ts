@@ -82,7 +82,7 @@ export const createProductSchema = z.object({
     .min(10, "Description must be at least 10 characters")
     .max(4096, "Description must be under 4096 characters"),
   price: z
-    .number({ invalid_type_error: "Price is required" })
+    .number({ error: "Price is required" })
     .positive("Price must be greater than 0"),
   compareAtPrice: z
     .number()
@@ -91,7 +91,7 @@ export const createProductSchema = z.object({
     .nullable(),
   categoryId: z.string().min(1, "Category is required"),
   stock: z
-    .number({ invalid_type_error: "Stock is required" })
+    .number({ error: "Stock is required" })
     .int("Stock must be a whole number")
     .min(0, "Stock cannot be negative"),
   tags: z.array(z.string()).optional(),
@@ -130,8 +130,8 @@ export const checkoutSchema = z.object({
     .string()
     .min(10, "Please enter a full shipping address")
     .max(512, "Address must be under 512 characters"),
-  paymentMethod: z.enum(["cod", "upi", "card"], {
-    required_error: "Please select a payment method",
+  paymentMethod: z.enum({ cod: "cod", upi: "upi", card: "card" }, {
+    error: "Please select a payment method",
   }),
   notes: z.string().max(512, "Notes must be under 512 characters").optional(),
 });

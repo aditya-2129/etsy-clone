@@ -36,12 +36,11 @@
 
 ---
 
-## 🌟 Overview
+This is a **full-stack marketplace application** inspired by Etsy, built with a modern, scalable architecture. It supports a **three-tiered role-based access control (RBAC)** system:
 
-This is a **full-stack marketplace application** inspired by Etsy, built with a modern, scalable architecture. It supports two user roles:
-
-- **Buyers** — Browse, search, filter, purchase handmade goods, leave reviews, and manage wishlists.
-- **Sellers** — Create shops, list products with images, manage inventory, fulfill orders, and track sales.
+- **Buyers (Default)** — Browse, search, filter, purchase handmade goods, leave reviews, and manage wishlists.
+- **Sellers** — Create shops, list products, manage inventory, and fulfill orders. Access is restricted until shop approval.
+- **Admins** — Full oversight of the marketplace. Manage users, approve/reject shops, curate featured products, and monitor orders/categories.
 
 The application uses **Appwrite** as the Backend-as-a-Service (BaaS), providing authentication, a structured NoSQL database, and file storage — all self-hosted via Docker.
 
@@ -102,7 +101,7 @@ The application uses **Appwrite** as the Backend-as-a-Service (BaaS), providing 
 │  auth.service.ts │ product.service.ts │ order.service.ts    │
 │  user.service.ts │ shop.service.ts    │ review.service.ts   │
 │  cart.service.ts │ wishlist.service.ts │ storage.service.ts  │
-│  category.service.ts                                        │
+│  category.service.ts │ admin.service.ts                      │
 ├─────────────────────────────────────────────────────────────┤
 │                     APPWRITE SDK LAYER                       │
 │  Client, Account, Databases, Storage, ID, Query             │
@@ -186,13 +185,22 @@ etsy-clone/
         │   │   ├── wishlist/page.tsx
         │   │   └── settings/page.tsx
         │   │
-        │   └── seller/                 # Seller protected routes
+        │   ├── seller/                 # Seller protected routes
         │       ├── dashboard/page.tsx
         │       ├── products/page.tsx
         │       ├── products/new/page.tsx
         │       ├── products/[id]/edit/page.tsx
         │       ├── orders/page.tsx
         │       └── shop/settings/page.tsx
+        │
+        │   └── (admin)/                # Admin-only management routes
+        │       ├── layout.tsx          # AdminShell sidebar layout
+        │       ├── page.tsx            # Stats dashboard
+        │       ├── users/page.tsx      # User suspension & role mgmt
+        │       ├── shops/page.tsx      # Shop approvals & status
+        │       ├── products/page.tsx   # Product features & visibility
+        │       ├── orders/page.tsx     # Platform-wide order oversight
+        │       └── categories/page.tsx # Category CRUD management
         │
         ├── components/
         │   ├── layout/                 # Global layout components
@@ -510,6 +518,17 @@ Every service function is typed end-to-end (input → output). The UI never call
 | **Order Fulfillment** | View incoming orders, update status, add tracking numbers |
 | **Dashboard** | Sales metrics, order stats, product performance |
 
+### 🛠️ Admin Experience
+
+| Feature | Description |
+|---|---|
+| **Platform Dashboard** | Real-time overview of users, shops, products, and revenue |
+| **User Management** | List all users, change roles, suspend/unsuspend accounts |
+| **Shop Approvals** | Review pending shops, approve for marketplace, or revoke access |
+| **Product Curation** | Toggle featured status for homepage, manage global visibility |
+| **Category Management** | Full CRUD for marketplace categories with auto-slugs |
+| **Order Oversight** | Platform-wide view of all orders and fulfillment statuses |
+
 ### 🔐 Authentication & Security
 
 | Feature | Description |
@@ -554,13 +573,20 @@ Every service function is typed end-to-end (input → output). The UI never call
 │   ├── /wishlist               Saved items
 │   └── /settings               Profile settings
 │
-└── /seller                     🔒 Seller dashboard (role: seller)
-    ├── /dashboard              Stats & metrics
-    ├── /products               Listings manager
-    │   ├── /new                Create listing
-    │   └── /[id]/edit          Edit listing
-    ├── /orders                 Incoming orders
-    └── /shop/settings          Shop configuration
+├── /seller                     🔒 Seller dashboard (role: seller)
+│   ├── /dashboard              Stats & metrics
+│   ├── /products               Listings manager
+│   │   ├── /new                Create listing
+│   │   └── /[id]/edit          Edit listing
+│   ├── /orders                 Incoming orders
+│   └── /shop/settings          Shop configuration
+│
+└── /admin                      🔒 Admin panel (role: admin)
+    ├── /users                  User management
+    ├── /shops                  Shop approvals
+    ├── /products               Product curation
+    ├── /orders                 Order oversight
+    └── /categories             Category manager
 ```
 
 > 🔒 = Protected route (requires authentication via middleware)

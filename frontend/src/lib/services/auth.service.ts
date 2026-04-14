@@ -10,6 +10,7 @@ import type { Models } from "appwrite";
 
 /**
  * Registers a new user account and creates a corresponding user document.
+ * Also sends a verification email automatically.
  * @returns The created user document
  */
 export async function register(
@@ -38,6 +39,12 @@ export async function register(
     };
 
     const userDoc = await createUserDocument(userInput);
+
+    // Send verification email (non-blocking — don't fail registration if this fails)
+    sendVerificationEmail().catch(() => {
+      // Silently fail — user can resend from their profile
+    });
+
     return userDoc;
   } catch (error) {
     console.error("Registration failed:", error);
@@ -89,17 +96,70 @@ export async function getCurrentAccount(): Promise<Models.User<Models.Preference
 
 /**
  * Gets the current user's database document (profile).
- * @returns The user document, or null if not found
+ * If the account exists but no user document is found (e.g., first Google login),
+ * it automatically creates the user document.
+ * @returns The user document, or null if not logged in
  */
 export async function getCurrentUser(): Promise<User | null> {
   try {
     const acc = await getCurrentAccount();
     if (!acc) return null;
 
-    const user = await getUserByUserId(acc.$id);
-    return user;
+    try {
+      const user = await getUserByUserId(acc.$id);
+      return user;
+    } catch {
+      // User document doesn't exist yet (first OAuth login)
+      // Auto-create it from the Appwrite account info
+      const userInput: CreateUserInput = {
+        userId: acc.$id,
+        name: acc.name || acc.email.split("@")[0],
+        email: acc.email,
+        role: UserRole.BUYER,
+      };
+
+      const newUser = await createUserDocument(userInput);
+      return newUser;
+    }
   } catch {
     return null;
+  }
+}
+
+/**
+ * Checks if the current user's email is verified.
+ */
+export async function isEmailVerified(): Promise<boolean> {
+  const acc = await getCurrentAccount();
+  return acc?.emailVerification ?? false;
+}
+
+/**
+ * Sends a verification email to the current user.
+ * The email contains a link that redirects to /verify with userId and secret params.
+ */
+export async function sendVerificationEmail(): Promise<void> {
+  try {
+    const callbackUrl = `${window.location.origin}/verify`;
+    await account.createVerification(callbackUrl);
+  } catch (error) {
+    console.error("Failed to send verification email:", error);
+    throw error;
+  }
+}
+
+/**
+ * Confirms email verification using the userId and secret from the callback URL.
+ */
+export async function confirmVerification(
+  userId: string,
+  secret: string
+): Promise<void> {
+  try {
+    await account.updateVerification(userId, secret);
+  } catch (error) {
+    console.error("Email verification failed:", error);
+    throw error;
   }
 }
 
@@ -114,3 +174,4 @@ export function loginWithGoogle(): void {
     `${window.location.origin}/login`
   );
 }
+

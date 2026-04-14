@@ -2,21 +2,26 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Routes that require the user to be authenticated
-const PROTECTED_ROUTES = ["/account", "/seller", "/checkout"];
+const PROTECTED_ROUTES = ["/account", "/seller", "/checkout", "/admin"];
 
-// Routes that should redirect TO the homepage if already logged in
-const AUTH_ROUTES = ["/login", "/register"];
+/**
+ * Checks for a valid Appwrite session cookie.
+ * Appwrite sets `a_session_<projectId>` or `a_session_<projectId>_legacy`.
+ */
+function hasValidSession(request: NextRequest): boolean {
+  const cookies = request.cookies.getAll();
+  return cookies.some(
+    (c) =>
+      c.name.startsWith("a_session_") &&
+      c.value.length > 0 &&
+      c.value !== "deleted"
+  );
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check for Appwrite session cookie
-  // Appwrite sets a cookie named `a_session_<projectId>` on login
-  const sessionCookie = request.cookies
-    .getAll()
-    .find((c) => c.name.startsWith("a_session_"));
-
-  const isAuthenticated = !!sessionCookie;
+  const isAuthenticated = hasValidSession(request);
 
   // Block unauthenticated users from protected routes
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
@@ -29,12 +34,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated users away from login/register
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
-
-  if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  // NOTE: We intentionally do NOT redirect authenticated users away
+  // from /login or /register. The AuthContext handles that client-side
+  // to avoid stale cookie issues. This can be re-enabled once
+  // auth flow is fully stable.
 
   return NextResponse.next();
 }
@@ -44,7 +47,7 @@ export const config = {
     "/account/:path*",
     "/seller/:path*",
     "/checkout/:path*",
-    "/login",
-    "/register",
+    "/admin/:path*",
   ],
 };
+

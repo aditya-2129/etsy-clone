@@ -94,7 +94,8 @@
                     "format": "enum",
                     "elements": [
                         "buyer",
-                        "seller"
+                        "seller",
+                        "admin"
                     ]
                 },
                 {
@@ -120,6 +121,22 @@
                     "type": "longtext",
                     "required": false,
                     "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "isSuspended",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
+                },
+                {
+                    "key": "shopId",
+                    "type": "varchar",
+                    "required": false,
+                    "array": false,
+                    "size": 36,
                     "default": null,
                     "encrypt": false
                 }
@@ -153,6 +170,17 @@
                     "status": "available",
                     "columns": [
                         "role"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "key": "isSuspended_key",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "isSuspended"
                     ],
                     "orders": [
                         "asc"
@@ -232,6 +260,13 @@
                     "default": null
                 },
                 {
+                    "key": "isApproved",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
+                },
+                {
                     "key": "totalSales",
                     "type": "integer",
                     "required": true,
@@ -296,6 +331,17 @@
                     "status": "available",
                     "columns": [
                         "slug"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "key": "isApproved_key",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "isApproved"
                     ],
                     "orders": [
                         "asc"
@@ -482,6 +528,13 @@
                     "default": false
                 },
                 {
+                    "key": "isFeatured",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": false
+                },
+                {
                     "key": "totalSold",
                     "type": "integer",
                     "required": false,
@@ -612,6 +665,17 @@
                     ],
                     "orders": [
                         "desc"
+                    ]
+                },
+                {
+                    "key": "isFeatured_key",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "isFeatured"
+                    ],
+                    "orders": [
+                        "asc"
                     ]
                 }
             ]

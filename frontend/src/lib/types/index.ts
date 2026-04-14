@@ -7,6 +7,7 @@ import type { Models } from "appwrite";
 export enum UserRole {
   BUYER = "buyer",
   SELLER = "seller",
+  ADMIN = "admin",
 }
 
 export enum OrderStatus {
@@ -41,6 +42,8 @@ export interface User extends Models.Document {
   avatar: string | null;
   phone: string | null;
   addresses: string | null;
+  isSuspended: boolean;
+  shopId: string | null;
 }
 
 export interface Shop extends Models.Document {
@@ -51,6 +54,7 @@ export interface Shop extends Models.Document {
   banner: string | null;
   logo: string | null;
   isActive: boolean;
+  isApproved: boolean;
   totalSales: number;
   rating: number;
   policies: string | null;
@@ -77,6 +81,7 @@ export interface Product extends Models.Document {
   stock: number;
   tags: string[];
   isPublished: boolean;
+  isFeatured: boolean;
   totalSold: number;
   rating: number;
   shippingCost: number | null;
@@ -158,6 +163,7 @@ export interface CreateShopInput {
   banner?: string;
   logo?: string;
   isActive: boolean;
+  isApproved?: boolean;
   totalSales: number;
   rating: number;
   policies?: string;
@@ -170,6 +176,7 @@ export interface UpdateShopInput {
   banner?: string;
   logo?: string;
   isActive?: boolean;
+  isApproved?: boolean;
   policies?: string;
   location?: string;
 }
@@ -203,6 +210,7 @@ export interface UpdateProductInput {
   stock?: number;
   tags?: string[];
   isPublished?: boolean;
+  isFeatured?: boolean;
   shippingCost?: number;
   processingTime?: string;
   materials?: string[];
@@ -259,10 +267,45 @@ export interface ProductFilters {
   minPrice?: number;
   maxPrice?: number;
   isPublished?: boolean;
+  isFeatured?: boolean;
   search?: string;
   sort?: "newest" | "oldest" | "price_asc" | "price_desc" | "popular";
   page?: number;
   limit?: number;
+}
+
+// =============================================================================
+// Admin Filter Types
+// =============================================================================
+
+export interface UserFilters {
+  role?: UserRole;
+  isSuspended?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ShopFilters {
+  isActive?: boolean;
+  isApproved?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminProductFilters extends ProductFilters {
+  isFeatured?: boolean;
+}
+
+export interface DashboardStats {
+  totalUsers: number;
+  totalSellers: number;
+  totalShops: number;
+  totalProducts: number;
+  totalOrders: number;
+  totalRevenue: number;
+  pendingShops: number;
 }
 
 export interface PaginatedResponse<T> {

@@ -296,3 +296,136 @@ export async function updateProductAfterPurchase(
     throw error;
   }
 }
+
+// =============================================================================
+// Admin — Product Management
+// =============================================================================
+
+/**
+ * Toggles a product's featured status. Admin-only.
+ */
+export async function toggleFeatured(
+  documentId: string,
+  isFeatured: boolean
+): Promise<Product> {
+  try {
+    const doc = await databases.updateDocument(
+      DATABASE_ID,
+      COLLECTION_PRODUCTS,
+      documentId,
+      { isFeatured }
+    );
+    return doc as unknown as Product;
+  } catch (error) {
+    console.error("Failed to toggle product featured status:", error);
+    throw error;
+  }
+}
+
+/**
+ * Lists featured products for the homepage.
+ */
+export async function listFeaturedProducts(
+  limit: number = 12
+): Promise<Product[]> {
+  try {
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTION_PRODUCTS,
+      [
+        Query.equal("isFeatured", true),
+        Query.equal("isPublished", true),
+        Query.orderDesc("$createdAt"),
+        Query.limit(limit),
+      ]
+    );
+    return result.documents as unknown as Product[];
+  } catch (error) {
+    console.error("Failed to list featured products:", error);
+    throw error;
+  }
+}
+
+/**
+ * Lists all products with full filtering, regardless of publish status.
+ * Intended for the admin panel.
+ */
+export async function listAllProducts(
+  filters: ProductFilters = {}
+): Promise<PaginatedResponse<Product>> {
+  try {
+    const queries: string[] = [];
+    const {
+      categoryId,
+      shopId,
+      sellerId,
+      minPrice,
+      maxPrice,
+      isPublished,
+      isFeatured,
+      sort = "newest",
+      page = 0,
+      limit = DEFAULT_PAGE_SIZE,
+    } = filters;
+
+    if (isPublished !== undefined) {
+      queries.push(Query.equal("isPublished", isPublished));
+    }
+    if (isFeatured !== undefined) {
+      queries.push(Query.equal("isFeatured", isFeatured));
+    }
+    if (categoryId) {
+      queries.push(Query.equal("categoryId", categoryId));
+    }
+    if (shopId) {
+      queries.push(Query.equal("shopId", shopId));
+    }
+    if (sellerId) {
+      queries.push(Query.equal("sellerId", sellerId));
+    }
+    if (minPrice !== undefined) {
+      queries.push(Query.greaterThanEqual("price", minPrice));
+    }
+    if (maxPrice !== undefined) {
+      queries.push(Query.lessThanEqual("price", maxPrice));
+    }
+
+    switch (sort) {
+      case "oldest":
+        queries.push(Query.orderAsc("$createdAt"));
+        break;
+      case "price_asc":
+        queries.push(Query.orderAsc("price"));
+        break;
+      case "price_desc":
+        queries.push(Query.orderDesc("price"));
+        break;
+      case "popular":
+        queries.push(Query.orderDesc("totalSold"));
+        break;
+      case "newest":
+      default:
+        queries.push(Query.orderDesc("$createdAt"));
+        break;
+    }
+
+    queries.push(Query.limit(limit));
+    queries.push(Query.offset(page * limit));
+
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTION_PRODUCTS,
+      queries
+    );
+
+    return {
+      documents: result.documents as unknown as Product[],
+      total: result.total,
+      hasMore: (page + 1) * limit < result.total,
+    };
+  } catch (error) {
+    console.error("Failed to list all products:", error);
+    throw error;
+  }
+}
+

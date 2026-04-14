@@ -1,14 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { Search, User, ShoppingCart, Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  User,
+  ShoppingCart,
+  Menu,
+  LogOut,
+  Package,
+  Heart,
+  Settings,
+  Store,
+  LayoutDashboard,
+  Shield,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
-  const handleSearch = (e: React.FormEvent) => {
+  const { user, isLoading, logout } = useAuth();
+  const router = useRouter();
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: implement search logic
+    const formData = new FormData(e.currentTarget);
+    const query = formData.get("q") as string;
+    if (query.trim()) {
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    }
   };
 
   return (
@@ -33,6 +62,7 @@ export default function Navbar() {
             className="relative w-full max-w-2xl mx-auto flex items-center"
           >
             <Input
+              name="q"
               type="search"
               placeholder="Search for items or shops"
               className="w-full rounded-full bg-muted/50 border-border pr-12 focus-visible:ring-[var(--etsy-orange)]"
@@ -52,24 +82,113 @@ export default function Navbar() {
 
         {/* Right Navigation */}
         <nav className="flex items-center gap-2 ml-auto">
-          {/* Become a seller link (Desktop only) */}
-          <Link
-            href="/seller/dashboard"
-            className="hidden lg:flex text-sm font-medium hover:text-[var(--etsy-orange)] transition-colors px-4 py-2"
-          >
-            Sell on Marketplace
-          </Link>
-
-          <Button variant="ghost" size="icon" asChild aria-label="Sign In">
-            <Link href="/login">
-              <User className="h-5 w-5" />
+          {/* Admin Panel (Desktop only) */}
+          {user?.role === "admin" && (
+            <Link
+              href="/admin"
+              className="hidden lg:flex items-center gap-1.5 text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors px-4 py-2"
+            >
+              <Shield className="h-4 w-4" />
+              Admin Panel
             </Link>
-          </Button>
+          )}
 
+          {/* User Icon / Dropdown */}
+          {isLoading ? (
+            <div className="h-9 w-9 rounded-full skeleton" />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative rounded-full"
+                  aria-label="Account menu"
+                >
+                  <div className="h-8 w-8 rounded-full bg-[var(--etsy-orange)] flex items-center justify-center text-white text-sm font-bold">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem asChild>
+                  <Link href="/account/orders">
+                    <Package className="mr-2 h-4 w-4" /> My Orders
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/wishlist">
+                    <Heart className="mr-2 h-4 w-4" /> Wishlist
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/settings">
+                    <Settings className="mr-2 h-4 w-4" /> Settings
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+                {user.role === "buyer" ? (
+                  <DropdownMenuItem asChild>
+                    <Link href="/seller/dashboard">
+                      <Store className="mr-2 h-4 w-4" /> Sell on Marketplace
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/seller/dashboard">
+                        <LayoutDashboard className="mr-2 h-4 w-4" /> Shop Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/seller/products">
+                        <Package className="mr-2 h-4 w-4" /> My Listings
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {user.role === "admin" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="text-purple-600 font-medium">
+                        <Shield className="mr-2 h-4 w-4" /> Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-[var(--etsy-error)] cursor-pointer"
+                  onClick={() => logout()}
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="ghost" size="icon" asChild aria-label="Sign In">
+              <Link href="/login">
+                <User className="h-5 w-5" />
+              </Link>
+            </Button>
+          )}
+
+          {/* Cart */}
           <Button variant="ghost" size="icon" asChild className="relative" aria-label="Cart">
             <Link href="/cart">
               <ShoppingCart className="h-5 w-5" />
-              {/* Note: In future we will wire up the actual cart count from state here */}
               <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--etsy-orange)] text-[10px] font-bold text-white">
                 0
               </span>
@@ -78,10 +197,11 @@ export default function Navbar() {
         </nav>
       </div>
 
-      {/* Mobile Search - shows below navbar on small screens */}
+      {/* Mobile Search */}
       <div className="md:hidden px-4 pb-3">
         <form onSubmit={handleSearch} className="relative w-full flex items-center">
           <Input
+            name="q"
             type="search"
             placeholder="Search for items..."
             className="w-full rounded-full bg-muted/50 border-border pr-12 focus-visible:ring-[var(--etsy-orange)]"
