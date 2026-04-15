@@ -187,7 +187,7 @@ export default function SellerProductsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
                           <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                            <Link href={`/products/${product.slug}`} target="_blank">
+                            <Link href={`/product/${product.slug}`} target="_blank">
                               <ExternalLink className="mr-2 h-4 w-4" /> View in Store
                             </Link>
                           </DropdownMenuItem>

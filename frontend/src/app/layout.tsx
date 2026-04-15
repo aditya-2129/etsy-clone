@@ -2,24 +2,32 @@ import type { Metadata } from "next";
 import { Inter, Outfit, Geist } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CartProvider } from "@/contexts/CartContext";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
 const inter = Inter({
-  variable: "--font-primary",
   subsets: ["latin"],
+  variable: "--font-inter",
+  display: 'swap',
 });
 
 const outfit = Outfit({
-  variable: "--font-heading",
   subsets: ["latin"],
+  variable: "--font-outfit",
+  display: 'swap',
+});
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "Handmade Marketplace",
-  description: "Find handmade, vintage, and custom goods from independent sellers.",
+  title: "Etsy Clone | Unique & Creative Marketplace",
+  description: "Shop for unique items from independent creators.",
 };
 
 export default function RootLayout({
@@ -34,12 +42,16 @@ export default function RootLayout({
     >
       <body className="flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
         <AuthProvider>
-          {children}
-          <Toaster 
-            position="top-right" 
-            richColors 
-            style={{ top: '80px', right: '0px' }} 
-          />
+          <WishlistProvider>
+            <CartProvider>
+              {children}
+              <Toaster 
+                position="top-right" 
+                richColors 
+                style={{ top: '80px', right: '0px' }} 
+              />
+            </CartProvider>
+          </WishlistProvider>
         </AuthProvider>
       </body>
     </html>

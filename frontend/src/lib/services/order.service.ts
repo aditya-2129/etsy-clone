@@ -13,13 +13,13 @@ import type {
 import { OrderStatus } from "@/lib/types";
 import { Permission, Role } from "appwrite";
 
-// =============================================================================
-// Order Service — Orders + Order Items management
-// =============================================================================
+import { 
+  updateProductAfterPurchase 
+} from "./product.service";
 
 /**
  * Creates a new order along with all its order items.
- * This is a composite operation — creates the order first, then all items.
+ * This is a composite operation — creates the order first, then all items, and updates stock.
  */
 export async function createOrder(
   orderData: CreateOrderInput,
@@ -31,16 +31,13 @@ export async function createOrder(
       DATABASE_ID,
       COLLECTION_ORDERS,
       ID.unique(),
-      orderData,
-      [
-        Permission.read(Role.user(orderData.buyerId)),
-        Permission.update(Role.user(orderData.buyerId)),
-      ]
+      orderData
     );
 
-    // Create all order items with the orderId
+    // Create all order items with the orderId and decrement stock
     const orderItems: OrderItem[] = [];
     for (const item of items) {
+      // 1. Create the order item
       const orderItem = await databases.createDocument(
         DATABASE_ID,
         COLLECTION_ORDER_ITEMS,
@@ -48,14 +45,12 @@ export async function createOrder(
         {
           ...item,
           orderId: order.$id,
-        },
-        [
-          Permission.read(Role.user(orderData.buyerId)),
-          Permission.read(Role.user(item.sellerId)),
-          Permission.update(Role.user(item.sellerId)),
-        ]
+        }
       );
       orderItems.push(orderItem as unknown as OrderItem);
+
+      // 2. Decrement product stock and increment totalSold
+      await updateProductAfterPurchase(item.productId, item.quantity);
     }
 
     return {

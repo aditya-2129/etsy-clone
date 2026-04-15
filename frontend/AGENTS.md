@@ -782,21 +782,41 @@ Does it need user interaction to trigger?
 .fade-in {
   animation: fadeIn var(--transition-base) var(--ease-out);
 }
-```
+// ... rest of the code
+---
+
+## 🛠️ MCP Servers & Advanced Tooling
+
+This project is equipped with **Model Context Protocol (MCP)** servers to enhance agent capabilities. Every agent MUST prioritize using these specialized tools before falling back to manual command-line execution or guessing.
+
+### 1. Infrastructure & Backend
+- **`docker`**: Use this to check container health, read logs from Appwrite, or restart services.
+- **`appwrite-docs`**: Use this as the **single source of truth** for Appwrite SDK usage instead of guessing.
+- **`vercel`**: Use this to manage deployments, check build logs, and handle environment variables on the cloud.
+
+### 2. Logic & Knowledge
+- **`sequential-thinking`**: Use this for multi-step architectural planning or debugging complex state issues.
+- **`memory`**: Use this to persist project-specific context and user preferences across turns.
+- **`fetch`**: Use this to read the latest documentation from Tailwind, Next.js, or external libraries.
+
+### 3. UI & Frontend Development
+- **`shadcn`**: Use this to browse the shadcn/ui registry and fetch components. **MANDATORY** for adding new UI elements.
+- **`next-devtools-mcp`**: Use this to inspect the App Router tree, debug server/client component boundaries, and analyze component state.
+- **`StitchMCP`**: Use this for high-fidelity screen generation and design system enforcement.
+- **`chrome-devtools-mcp`**: Use this for visual regression testing, performance audits (Lighthouse), and DOM inspection.
+
+### 4. File Management
+- **`everything`**: Use this for near-instant file location on the local Windows machine.
 
 ---
 
-## 🖼️ Image Pipeline
+## 🚀 Agent Workflow Priority
 
-### 1. Flow
-
-```
-User uploads image
-  → Appwrite Storage (bucket: product-images / shop-assets / user-avatars)
-    → Store fileId in database document
-      → Display using getFilePreview() with transforms
-        → Render via next/image for optimization
-```
+1. **Verify State**: Use `docker` and `next-devtools-mcp` to understand the current environment.
+2. **Consult Docs**: Use `appwrite-docs` and `fetch` before writing service logic.
+3. **Plan**: Use `sequential-thinking` for features involving more than 3 files.
+4. **Enforce Design**: Use `shadcn` and `StitchMCP` to ensure UI consistency.
+5. **Debug**: Use `chrome-devtools-mcp` and `vercel` logs for runtime issues.
 
 ### 2. Usage Pattern
 

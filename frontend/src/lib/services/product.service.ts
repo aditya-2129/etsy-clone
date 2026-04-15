@@ -81,6 +81,30 @@ export async function getProductById(documentId: string): Promise<Product> {
 }
 
 /**
+ * Fetches multiple products by their document IDs.
+ * Used for Wishlist, Cart, and Order History.
+ */
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  try {
+    if (!ids || ids.length === 0) return [];
+    
+    // Appwrite Query.equal supports arrays for matching any value in the list
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTION_PRODUCTS,
+      [Query.equal("$id", ids), Query.limit(ids.length)]
+    );
+    
+    // Sort products in the same order as the input IDs if necessary, 
+    // or just return as is.
+    return result.documents as unknown as Product[];
+  } catch (error) {
+    console.error("Failed to get products by IDs:", error);
+    throw error;
+  }
+}
+
+/**
  * Lists products with filtering, sorting, and pagination.
  */
 export async function listProducts(
@@ -162,12 +186,13 @@ export async function listProducts(
 }
 
 /**
- * Fulltext search on product titles.
+ * Fulltext search on product titles with pagination.
  */
 export async function searchProducts(
   query: string,
+  page: number = 0,
   limit: number = DEFAULT_PAGE_SIZE
-): Promise<Product[]> {
+): Promise<PaginatedResponse<Product>> {
   try {
     const result = await databases.listDocuments(
       DATABASE_ID,
@@ -176,9 +201,15 @@ export async function searchProducts(
         Query.search("title", query),
         Query.equal("isPublished", true),
         Query.limit(limit),
+        Query.offset(page * limit),
       ]
     );
-    return result.documents as unknown as Product[];
+
+    return {
+      documents: result.documents as unknown as Product[],
+      total: result.total,
+      hasMore: (page + 1) * limit < result.total,
+    };
   } catch (error) {
     console.error("Failed to search products:", error);
     throw error;

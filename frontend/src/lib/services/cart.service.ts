@@ -28,12 +28,7 @@ export async function addToCart(data: AddToCartInput): Promise<CartItem> {
       DATABASE_ID,
       COLLECTION_CART,
       ID.unique(),
-      data,
-      [
-        Permission.read(Role.user(data.buyerId)),
-        Permission.update(Role.user(data.buyerId)),
-        Permission.delete(Role.user(data.buyerId)),
-      ]
+      data
     );
     return doc as unknown as CartItem;
   } catch (error) {

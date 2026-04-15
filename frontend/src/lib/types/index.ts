@@ -221,6 +221,8 @@ export interface CreateOrderInput {
   totalAmount: number;
   shippingAddress: string;
   paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  status: OrderStatus;
   notes?: string;
 }
 

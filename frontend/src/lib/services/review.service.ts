@@ -21,12 +21,7 @@ export async function createReview(data: CreateReviewInput): Promise<Review> {
       DATABASE_ID,
       COLLECTION_REVIEWS,
       ID.unique(),
-      data,
-      [
-        Permission.read(Role.any()),
-        Permission.update(Role.user(data.buyerId)),
-        Permission.delete(Role.user(data.buyerId)),
-      ]
+      data
     );
     return doc as unknown as Review;
   } catch (error) {
@@ -133,6 +128,39 @@ export async function calculateProductRating(
     return { average, count: reviews.length };
   } catch (error) {
     console.error("Failed to calculate product rating:", error);
+    throw error;
+  }
+}
+
+/**
+ * Composite function: creates a review and then automatically updates
+ * the product's average rating and review count.
+ */
+export async function addReviewAndUpdateProduct(
+  data: CreateReviewInput
+): Promise<Review> {
+  try {
+    // 1. Create the review
+    const review = await createReview(data);
+
+    // 2. Calculate the new rating
+    const { average, count } = await calculateProductRating(data.productId);
+
+    // 3. Update the product document
+    // We import updateProduct locally if needed or just use the DB client directly
+    await databases.updateDocument(
+      DATABASE_ID,
+      "products", // COLLECTION_PRODUCTS
+      data.productId,
+      {
+        rating: average,
+        reviewCount: count,
+      }
+    );
+
+    return review;
+  } catch (error) {
+    console.error("Failed in addReviewAndUpdateProduct:", error);
     throw error;
   }
 }

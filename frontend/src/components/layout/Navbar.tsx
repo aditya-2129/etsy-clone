@@ -16,6 +16,7 @@ import {
   Shield,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ import {
 
 export default function Navbar() {
   const { user, isLoading, logout } = useAuth();
+  const { itemCount } = useCart();
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,11 +51,19 @@ export default function Navbar() {
         </Button>
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 mr-6">
-          <span className="font-heading text-2xl font-bold tracking-tight text-[var(--etsy-orange)]">
-            Marketplace
-          </span>
-        </Link>
+        <div className="flex items-center gap-6 mr-6">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="font-heading text-2xl font-bold tracking-tight text-[var(--etsy-orange)]">
+              Marketplace
+            </span>
+          </Link>
+          <Link 
+            href="/explore" 
+            className="hidden md:flex items-center gap-1 text-sm font-bold text-foreground/80 hover:text-[var(--etsy-orange)] transition-colors"
+          >
+            Explore
+          </Link>
+        </div>
 
         {/* Search Bar */}
         <div className="flex-1 hidden md:flex items-center">
@@ -154,6 +164,11 @@ export default function Navbar() {
                         <Package className="mr-2 h-4 w-4" /> My Listings
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/seller/shop/settings">
+                        <Store className="mr-2 h-4 w-4" /> Shop Settings
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
 
@@ -189,9 +204,11 @@ export default function Navbar() {
           <Button variant="ghost" size="icon" asChild className="relative" aria-label="Cart">
             <Link href="/cart">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--etsy-orange)] text-[10px] font-bold text-white">
-                0
-              </span>
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--etsy-orange)] text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
             </Link>
           </Button>
         </nav>

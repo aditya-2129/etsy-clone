@@ -691,7 +691,7 @@
             "databaseId": "marketplace",
             "name": "Orders",
             "enabled": true,
-            "rowSecurity": true,
+            "rowSecurity": false,
             "columns": [
                 {
                     "key": "buyerId",
@@ -976,7 +976,7 @@
             "databaseId": "marketplace",
             "name": "Order Items",
             "enabled": true,
-            "rowSecurity": true,
+            "rowSecurity": false,
             "columns": [
                 {
                     "key": "orderId",
