@@ -13,6 +13,7 @@ interface CartItemCardProps {
   onRemove: () => void;
   isUpdating?: boolean;
   imageUrl?: string;
+  disableIncrement?: boolean;
 }
 
 export function CartItemCard({
@@ -25,6 +26,7 @@ export function CartItemCard({
   onRemove,
   isUpdating = false,
   imageUrl,
+  disableIncrement = false,
 }: CartItemCardProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border bg-card hover:border-[var(--etsy-orange)] transition-colors group">
@@ -85,7 +87,7 @@ export function CartItemCard({
               size="icon"
               className="h-7 w-7 rounded-full hover:bg-background shadow-sm disabled:opacity-30"
               onClick={onIncrement}
-              disabled={isUpdating}
+              disabled={isUpdating || disableIncrement}
               aria-label="Increase quantity"
             >
               <Plus className="h-3 w-3" />

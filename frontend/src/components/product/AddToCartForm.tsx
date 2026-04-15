@@ -16,19 +16,32 @@ interface AddToCartFormProps {
 
 export function AddToCartForm({ product }: AddToCartFormProps) {
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
   const router = useRouter();
   const [quantity, setQuantity] = React.useState(1);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const quantityInCart = items.find((item) => item.productId === product.$id)?.quantity ?? 0;
+  const remainingStock = Math.max(0, product.stock - quantityInCart);
+  const isAtMaxInCart = remainingStock === 0;
+
+  React.useEffect(() => {
+    if (remainingStock === 0) {
+      setQuantity(1);
+      return;
+    }
+    setQuantity((current) => Math.min(Math.max(1, current), remainingStock));
+  }, [remainingStock]);
 
   const handleAddToCart = async () => {
+    if (isSubmitting) return;
+
     if (!user) {
       toast.error("Please login to add items to cart");
       router.push("/login?redirect=" + encodeURIComponent(window.location.pathname));
       return;
     }
 
-    if (quantity > product.stock) {
+    if (quantity > remainingStock) {
       toast.error("Not enough stock available");
       return;
     }
@@ -66,9 +79,9 @@ export function AddToCartForm({ product }: AddToCartFormProps) {
           <Input
             type="number"
             min={1}
-            max={product.stock}
+            max={Math.max(1, remainingStock)}
             value={quantity}
-            onChange={(e) => setQuantity(Math.min(product.stock, Math.max(1, parseInt(e.target.value) || 1)))}
+            onChange={(e) => setQuantity(Math.min(Math.max(1, remainingStock), Math.max(1, parseInt(e.target.value) || 1)))}
             className="w-12 h-8 text-center p-0 border-none focus-visible:ring-0 bg-transparent"
             readOnly
           />
@@ -76,8 +89,8 @@ export function AddToCartForm({ product }: AddToCartFormProps) {
             variant="outline"
             size="icon"
             className="h-8 w-8 rounded-full"
-            onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-            disabled={quantity >= product.stock || isSubmitting}
+            onClick={() => setQuantity(Math.min(remainingStock, quantity + 1))}
+            disabled={quantity >= remainingStock || isSubmitting || isAtMaxInCart}
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -87,11 +100,13 @@ export function AddToCartForm({ product }: AddToCartFormProps) {
       <div className="flex flex-col gap-3">
         <Button
           onClick={handleAddToCart}
-          disabled={isSubmitting || product.stock === 0}
+          disabled={isSubmitting || product.stock === 0 || isAtMaxInCart}
           className="w-full bg-[var(--etsy-orange)] hover:bg-[var(--etsy-orange-hover)] text-white rounded-full py-6 text-lg font-semibold shadow-md active:scale-[0.98] transition-all"
         >
           {product.stock === 0 ? (
             "Out of stock"
+          ) : isAtMaxInCart ? (
+            "Max quantity in cart"
           ) : isSubmitting ? (
             "Adding..."
           ) : (
@@ -111,9 +126,9 @@ export function AddToCartForm({ product }: AddToCartFormProps) {
         </Button>
       </div>
       
-      {product.stock > 0 && product.stock <= 5 && (
+      {remainingStock > 0 && remainingStock <= 5 && (
         <p className="text-xs text-[var(--etsy-error)] font-medium text-center">
-          Only {product.stock} left in stock - order soon!
+          Only {remainingStock} left in stock - order soon!
         </p>
       )}
     </div>

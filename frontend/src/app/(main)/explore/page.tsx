@@ -4,12 +4,12 @@ import { ProductGrid } from "@/components/product/ProductGrid";
 import { Suspense } from "react";
 import Link from "next/link";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { normalize } from "@/lib/utils";
 import { SortSelect } from "./SortSelect";
 import { Pagination } from "@/components/shared/Pagination";
 import type { ProductFilters } from "@/lib/types";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { ExploreFilters } from "./ExploreFilters";
 
 interface ExplorePageProps {
   searchParams: Promise<{
@@ -17,18 +17,24 @@ interface ExplorePageProps {
     sort?: string;
     minPrice?: string;
     maxPrice?: string;
+    inStock?: string;
+    onSale?: string;
     page?: string;
   }>;
 }
 
 export default async function ExplorePage({ searchParams }: ExplorePageProps) {
-  const { category, sort, minPrice, maxPrice, page } = await searchParams;
+  const { category, sort, minPrice, maxPrice, inStock, onSale, page } = await searchParams;
+  const inStockOnly = inStock === "true";
+  const onSaleOnly = onSale === "true";
 
   const filters: ProductFilters = {
     categoryId: category,
     sort: (sort as ProductFilters["sort"]) || "newest",
     minPrice: minPrice ? parseFloat(minPrice) : undefined,
     maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+    inStockOnly,
+    onSaleOnly,
     page: page ? parseInt(page) : 0,
     isPublished: true,
   };
@@ -41,6 +47,20 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
   const productsData = normalize(productsDataRaw);
   const currentPage = page ? parseInt(page) : 0;
   const totalPages = Math.ceil(productsData.total / DEFAULT_PAGE_SIZE);
+
+  const createExploreUrl = (nextCategory?: string) => {
+    const params = new URLSearchParams();
+
+    if (nextCategory) params.set("category", nextCategory);
+    if (sort) params.set("sort", sort);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    if (inStockOnly) params.set("inStock", "true");
+    if (onSaleOnly) params.set("onSale", "true");
+
+    const query = params.toString();
+    return query ? `/explore?${query}` : "/explore";
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -63,10 +83,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
           </div>
           
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-background hover:bg-muted font-bold text-sm transition-all active:scale-95 shadow-sm">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
-            </button>
+            <ExploreFilters />
             <div className="h-10 w-px bg-border hidden md:block" />
             <SortSelect defaultValue={sort || "newest"} />
           </div>
@@ -76,7 +93,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       {/* Category Quick Filters */}
       <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
         <Link
-          href="/explore"
+          href={createExploreUrl()}
           className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-bold transition-all border shadow-sm ${
             !category 
               ? "bg-foreground text-background border-foreground" 
@@ -88,7 +105,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
         {categories.map((cat) => (
           <Link
             key={cat.$id}
-            href={`/explore?category=${cat.$id}`}
+            href={createExploreUrl(cat.$id)}
             className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-bold transition-all border shadow-sm ${
               category === cat.$id 
                 ? "bg-foreground text-background border-foreground" 
@@ -117,7 +134,7 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
           <div className="text-center space-y-1">
             <h3 className="text-xl font-bold">No items found</h3>
             <p className="text-muted-foreground max-w-xs mx-auto">
-              Try adjusting your filters or search terms to find what you're looking for.
+              Try adjusting your filters or search terms to find what you&apos;re looking for.
             </p>
           </div>
           <Link 

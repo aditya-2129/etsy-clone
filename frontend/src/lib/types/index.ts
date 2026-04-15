@@ -268,6 +268,8 @@ export interface ProductFilters {
   sellerId?: string;
   minPrice?: number;
   maxPrice?: number;
+  inStockOnly?: boolean;
+  onSaleOnly?: boolean;
   isPublished?: boolean;
   isFeatured?: boolean;
   search?: string;

@@ -102,16 +102,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      const product = await productService.getProductById(productId);
+      const existingItem = items.find((item) => item.productId === productId);
+      const existingQuantity = existingItem?.quantity ?? 0;
+      const availableToAdd = Math.max(0, product.stock - existingQuantity);
+
+      if (availableToAdd <= 0) {
+        toast.error("You already have the maximum available quantity in your cart.");
+        return;
+      }
+
+      const safeQuantity = Math.min(quantity, availableToAdd);
+
       await cartService.addToCart({
         buyerId: user.$id,
         productId,
         shopId,
         sellerId,
-        quantity,
+        quantity: safeQuantity,
       });
       await refreshCart();
-      toast.success("Added to cart!");
+      if (safeQuantity < quantity) {
+        toast.success(`Added ${safeQuantity} item${safeQuantity > 1 ? "s" : ""} to cart (stock limit reached).`);
+      } else {
+        toast.success("Added to cart!");
+      }
     } catch (error) {
+      if (error instanceof Error && (error.message === "OUT_OF_STOCK" || error.message === "CART_STOCK_LIMIT")) {
+        await refreshCart();
+        toast.error("This product has reached its stock limit in your cart.");
+        return;
+      }
       console.error("Add to cart error:", error);
       toast.error("Failed to add item to cart.");
     }
@@ -122,8 +143,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
    */
   const updateQuantity = async (itemId: string, quantity: number) => {
     try {
-      await cartService.updateCartQuantity(itemId, quantity);
+      const cartItem = items.find((item) => item.$id === itemId);
+      if (!cartItem) {
+        await refreshCart();
+        return;
+      }
+
+      const product = await productService.getProductById(cartItem.productId);
+
+      if (product.stock <= 0) {
+        await cartService.removeFromCart(itemId);
+        await refreshCart();
+        toast.error("This item is out of stock and was removed from your cart.");
+        return;
+      }
+
+      const safeQuantity = Math.min(quantity, product.stock);
+      await cartService.updateCartQuantity(itemId, safeQuantity);
       await refreshCart();
+      if (safeQuantity < quantity) {
+        toast.error(`Quantity updated to ${safeQuantity} due to stock limit.`);
+      }
     } catch (error) {
       if (error instanceof Error && error.message === "ITEM_REMOVED") {
         await refreshCart();

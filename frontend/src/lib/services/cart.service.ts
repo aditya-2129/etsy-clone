@@ -1,7 +1,7 @@
 import { databases, ID, Query } from "@/lib/appwrite";
 import { DATABASE_ID, COLLECTION_CART } from "@/lib/constants";
+import * as productService from "@/lib/services/product.service";
 import type { CartItem, AddToCartInput } from "@/lib/types";
-import { Permission, Role } from "appwrite";
 
 // =============================================================================
 // Cart Service — CRUD for the cart collection
@@ -13,14 +13,26 @@ import { Permission, Role } from "appwrite";
  */
 export async function addToCart(data: AddToCartInput): Promise<CartItem> {
   try {
+    const product = await productService.getProductById(data.productId);
+    if (product.stock <= 0) {
+      throw new Error("OUT_OF_STOCK");
+    }
+
     // Check if product is already in cart
     const existing = await getCartItemByProduct(data.buyerId, data.productId);
+    const existingQuantity = existing?.quantity ?? 0;
+
+    if (existingQuantity >= product.stock) {
+      throw new Error("CART_STOCK_LIMIT");
+    }
+
+    const safeQuantity = Math.min(data.quantity, product.stock - existingQuantity);
 
     if (existing) {
       // Update quantity instead of creating duplicate
       return await updateCartQuantity(
         existing.$id,
-        existing.quantity + data.quantity
+        existing.quantity + safeQuantity
       );
     }
 
@@ -28,7 +40,10 @@ export async function addToCart(data: AddToCartInput): Promise<CartItem> {
       DATABASE_ID,
       COLLECTION_CART,
       ID.unique(),
-      data
+      {
+        ...data,
+        quantity: safeQuantity,
+      }
     );
     return doc as unknown as CartItem;
   } catch (error) {

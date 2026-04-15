@@ -338,6 +338,17 @@
                     ]
                 },
                 {
+                    "key": "name_search",
+                    "type": "fulltext",
+                    "status": "available",
+                    "columns": [
+                        "name"
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
                     "key": "isApproved_key",
                     "type": "key",
                     "status": "available",

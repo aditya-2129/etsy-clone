@@ -80,6 +80,7 @@ export default function CartPage() {
                 onIncrement={() => updateQuantity(item.$id, item.quantity + 1)}
                 onDecrement={() => updateQuantity(item.$id, Math.max(1, item.quantity - 1))}
                 onRemove={() => removeItem(item.$id)}
+                disableIncrement={item.product ? item.quantity >= item.product.stock : false}
                 // Support image from product or placeholder
                 imageUrl={item.product?.images?.[0] ? getFilePreview(BUCKET_PRODUCT_IMAGES, item.product.images[0], { width: 240, height: 240 }) : undefined}
               />

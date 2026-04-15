@@ -171,6 +171,69 @@ export async function listActiveShops(limit: number = 25): Promise<Shop[]> {
 // =============================================================================
 
 /**
+ * Searches active + approved shops by name.
+ * If full-text index isn't ready in Appwrite yet, falls back to in-memory filtering.
+ */
+export async function searchShops(
+  query: string,
+  page: number = 0,
+  limit: number = DEFAULT_PAGE_SIZE
+): Promise<PaginatedResponse<Shop>> {
+  const normalizedQuery = query.trim();
+  if (normalizedQuery.length < 3) {
+    return { documents: [], total: 0, hasMore: false };
+  }
+
+  const offset = page * limit;
+
+  try {
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTION_SHOPS,
+      [
+        Query.search("name", normalizedQuery),
+        Query.equal("isActive", true),
+        Query.equal("isApproved", true),
+        Query.limit(limit),
+        Query.offset(offset),
+      ]
+    );
+
+    return {
+      documents: result.documents as unknown as Shop[],
+      total: result.total,
+      hasMore: (page + 1) * limit < result.total,
+    };
+  } catch (error) {
+    console.warn("Falling back to client-side shop filtering:", error);
+
+    const fallbackResult = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTION_SHOPS,
+      [
+        Query.equal("isActive", true),
+        Query.equal("isApproved", true),
+        Query.limit(100),
+      ]
+    );
+
+    const queryLower = normalizedQuery.toLowerCase();
+    const filtered = (fallbackResult.documents as unknown as Shop[]).filter(
+      (shop) =>
+        shop.name.toLowerCase().includes(queryLower) ||
+        (shop.description?.toLowerCase().includes(queryLower) ?? false)
+    );
+
+    const paged = filtered.slice(offset, offset + limit);
+    return {
+      documents: paged,
+      total: filtered.length,
+      hasMore: offset + limit < filtered.length,
+    };
+  }
+}
+
+/**
  * Approves a shop so it becomes visible in the marketplace.
  */
 export async function approveShop(documentId: string): Promise<Shop> {

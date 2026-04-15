@@ -1,11 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const QUICK_LINKS = [
   { label: "Gifts", href: "/search?q=gifts" },
@@ -17,17 +13,6 @@ const QUICK_LINKS = [
 ];
 
 export default function HomeHero() {
-  const router = useRouter();
-
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const query = formData.get("hero-q") as string;
-    if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-    }
-  };
-
   return (
     <section className="relative w-full overflow-hidden rounded-3xl min-h-[420px] md:min-h-[480px]">
       {/* Background Image */}
@@ -63,30 +48,8 @@ export default function HomeHero() {
           handcrafted with care.
         </p>
 
-        {/* Search Bar */}
-        <form
-          onSubmit={handleSearch}
-          className="relative w-full max-w-lg flex items-center mb-6"
-        >
-          <Input
-            name="hero-q"
-            type="search"
-            placeholder="Search for anything..."
-            className="w-full h-12 sm:h-14 rounded-full bg-white/95 backdrop-blur-sm border-0 text-foreground pl-5 pr-14 text-sm sm:text-base shadow-2xl placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-[var(--etsy-orange)]"
-            aria-label="Search marketplace"
-          />
-          <Button
-            type="submit"
-            size="icon"
-            className="absolute right-1.5 h-9 w-9 sm:h-11 sm:w-11 rounded-full bg-[var(--etsy-orange)] hover:bg-[var(--etsy-orange-hover)] text-white shadow-lg transition-all hover:scale-105 active:scale-95"
-            aria-label="Search"
-          >
-            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-        </form>
-
         {/* Quick Links */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
           <span className="text-white/50 text-xs font-medium mr-1">
             Popular:
           </span>

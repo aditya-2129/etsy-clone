@@ -118,6 +118,8 @@ export async function listProducts(
       sellerId,
       minPrice,
       maxPrice,
+      inStockOnly,
+      onSaleOnly,
       isPublished = true,
       sort = "newest",
       page = 0,
@@ -142,6 +144,12 @@ export async function listProducts(
     }
     if (maxPrice !== undefined) {
       queries.push(Query.lessThanEqual("price", maxPrice));
+    }
+    if (inStockOnly) {
+      queries.push(Query.greaterThan("stock", 0));
+    }
+    if (onSaleOnly) {
+      queries.push(Query.greaterThan("compareAtPrice", 0));
     }
 
     // Sorting
@@ -174,10 +182,14 @@ export async function listProducts(
       queries
     );
 
+    const documents = (result.documents as unknown as Product[]).filter((product) =>
+      onSaleOnly ? Boolean(product.compareAtPrice && product.compareAtPrice > product.price) : true
+    );
+
     return {
-      documents: result.documents as unknown as Product[],
-      total: result.total,
-      hasMore: (page + 1) * limit < result.total,
+      documents,
+      total: onSaleOnly ? documents.length : result.total,
+      hasMore: onSaleOnly ? false : (page + 1) * limit < result.total,
     };
   } catch (error) {
     console.error("Failed to list products:", error);
@@ -193,12 +205,17 @@ export async function searchProducts(
   page: number = 0,
   limit: number = DEFAULT_PAGE_SIZE
 ): Promise<PaginatedResponse<Product>> {
+  const normalizedQuery = query.trim();
+  if (normalizedQuery.length < 3) {
+    return { documents: [], total: 0, hasMore: false };
+  }
+
   try {
     const result = await databases.listDocuments(
       DATABASE_ID,
       COLLECTION_PRODUCTS,
       [
-        Query.search("title", query),
+        Query.search("title", normalizedQuery),
         Query.equal("isPublished", true),
         Query.limit(limit),
         Query.offset(page * limit),
@@ -392,6 +409,8 @@ export async function listAllProducts(
       sellerId,
       minPrice,
       maxPrice,
+      inStockOnly,
+      onSaleOnly,
       isPublished,
       isFeatured,
       sort = "newest",
@@ -419,6 +438,12 @@ export async function listAllProducts(
     }
     if (maxPrice !== undefined) {
       queries.push(Query.lessThanEqual("price", maxPrice));
+    }
+    if (inStockOnly) {
+      queries.push(Query.greaterThan("stock", 0));
+    }
+    if (onSaleOnly) {
+      queries.push(Query.greaterThan("compareAtPrice", 0));
     }
 
     switch (sort) {
@@ -449,14 +474,17 @@ export async function listAllProducts(
       queries
     );
 
+    const documents = (result.documents as unknown as Product[]).filter((product) =>
+      onSaleOnly ? Boolean(product.compareAtPrice && product.compareAtPrice > product.price) : true
+    );
+
     return {
-      documents: result.documents as unknown as Product[],
-      total: result.total,
-      hasMore: (page + 1) * limit < result.total,
+      documents,
+      total: onSaleOnly ? documents.length : result.total,
+      hasMore: onSaleOnly ? false : (page + 1) * limit < result.total,
     };
   } catch (error) {
     console.error("Failed to list all products:", error);
     throw error;
   }
 }
-
